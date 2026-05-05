@@ -1,13 +1,12 @@
-package com.yipintsoi.starterapi;
+package com.starter.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class StarterapiApplication {
+public class StarterApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(StarterapiApplication.class, args);
+		SpringApplication.run(StarterApplication.class, args);
 	}
-
 }

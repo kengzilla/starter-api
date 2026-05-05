@@ -1,0 +1,23 @@
+# Copy to application-local.properties (gitignored) and uncomment one datasource block.
+
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+spring.jpa.hibernate.ddl-auto=validate
+
+# --- Oracle (default driver in pom.xml) ---
+#spring.datasource.url=jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+#spring.datasource.username=starter
+#spring.datasource.password=change-me
+#spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
+
+# --- PostgreSQL (replace ojdbc11 in pom.xml with postgresql driver) ---
+#spring.datasource.url=jdbc:postgresql://localhost:5432/starter
+#spring.datasource.username=starter
+#spring.datasource.password=change-me
+#spring.datasource.driver-class-name=org.postgresql.Driver
+
+# --- MySQL (replace ojdbc11 in pom.xml with mysql-connector-j) ---
+#spring.datasource.url=jdbc:mysql://localhost:3306/starter
+#spring.datasource.username=starter
+#spring.datasource.password=change-me
+#spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
