@@ -1,4 +1,4 @@
-package com.starter.api.core.config;
+package com.starter.api.app.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

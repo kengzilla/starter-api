@@ -1,8 +1,8 @@
-package com.starter.api.core.common;
+package com.starter.api.shared.error;
 
 /**
  * Central place for {@code FEATURE_REASON} error code constants.
- * Add codes when you introduce features (see ARCHITECTURE_GUIDELINE.md).
+ * Add codes when you introduce features.
  */
 public final class ErrorCodes {
 

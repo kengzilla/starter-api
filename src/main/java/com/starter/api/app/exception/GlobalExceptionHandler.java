@@ -1,6 +1,7 @@
-package com.starter.api.core.exception;
+package com.starter.api.app.exception;
 
-import com.starter.api.core.common.ApiResponse;
+import com.starter.api.shared.api.ApiResponse;
+import com.starter.api.shared.exception.ApiBusinessException;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

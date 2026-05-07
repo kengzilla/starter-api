@@ -1,4 +1,4 @@
-package com.starter.api.core.common;
+package com.starter.api.shared.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;

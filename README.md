@@ -9,29 +9,92 @@ Spring Boot 3.5 / Java 21 backend starter template.
 - Spring Data JPA + Hibernate
 - Flyway (database schema migrations)
 - Spring Validation
-- Oracle (primary) — switchable to any JDBC-compatible database
+- Oracle (primary) - switchable to any JDBC-compatible database
 - H2 in-memory (tests and default dev profile)
 - Springdoc OpenAPI (Swagger UI)
 - Lombok
+
+## Modular Monolith (Phase 1)
+
+This starter now uses a phase-1 modular-monolith baseline:
+
+- `app/` for application composition and global concerns
+- `shared/` for shared kernel (response envelope, common exceptions, cross-cutting utilities)
+- `modules/auth/` as an empty module skeleton (`api/domain/infra`)
+- `modules/health/` for lightweight health endpoint
+
+Business modules in the target architecture (`facility`, `floorplan`, `interest`, `payment`) are documented as the next phase and are not implemented in code yet.
+
+Legacy placeholder roots from the old structure (`core`, `domain`, `feature`, `integration`, and root-level `auth`/`health`) were removed.
+For external systems, keep adapters inside each owning module's `infra` package (for example `modules/auth/infra`).
+
+## Quick Start: Add a New Module
+
+Use this baseline when introducing `modules/<name>/`:
+
+1. Create three packages:
+   - `modules/<name>/api`
+   - `modules/<name>/domain`
+   - `modules/<name>/infra`
+2. Put public contracts/controllers in `api`.
+3. Put business rules in `domain` (keep controllers thin).
+4. Put DB/external-system adapters in `infra`.
+5. Call other modules via their `api` contracts only (never import another module's `infra`).
+6. Move truly generic reusable logic to `shared` (business-agnostic only).
+7. Add/update tests and document boundary changes in `ARCHITECTURE_GUIDELINE.md`.
+
+Example (`modules/payment`):
+
+```text
+src/main/java/com/starter/api/modules/payment/
+├── api/       PaymentController, PaymentFacade
+├── domain/    PaymentService, PaymentPolicy, Receipt
+└── infra/     PaymentRepository, BankGatewayClient
+```
 
 ## Project Structure
 
 ```
 src/main/java/com/starter/api/
-├── StarterApplication.java       Entry point
-├── core/
-│   ├── common/                   Shared response envelope and error codes
-│   ├── config/                   CORS, OpenAPI, and other cross-cutting beans
-│   ├── exception/                Business exception and global error handler
-│   └── security/                 Reserved for interceptors / token checks when you add auth
-├── domain/
-│   ├── entity/                   JPA entities
-│   └── repository/               Spring Data repositories
-├── feature/                      One subpackage per domain (auth, bill, …) — add as you go
-├── integration/
-│   ├── api/                      # ต่อกับ REST API ภายนอก (เช่น Stripe, Firebase)
-│   ├── storage/                  # ต่อกับระบบไฟล์ (เช่น AWS S3)
-│   └── notification/             # ต่อกับระบบส่ง Email / SMS
+├── StarterApplication.java          Entry point
+├── app/
+│   ├── config/                      CORS, OpenAPI and app-level configuration
+│   ├── exception/                   Global exception mapping
+│   └── security/                    Security bootstrap placeholder
+├── shared/
+│   ├── api/                         ApiResponse and shared response contracts
+│   ├── error/                       Error code constants
+│   └── exception/                   Shared business exception types
+└── modules/
+    ├── health/
+    │   └── api/                     Health endpoint (`/api/v1/health`)
+    └── auth/
+        ├── api/                     Public auth contracts (skeleton)
+        ├── domain/                  Auth business domain (skeleton)
+        └── infra/                   Auth infrastructure adapters (skeleton)
+```
+
+## Health Endpoint
+
+The starter provides a lightweight liveness endpoint:
+
+```http
+GET /api/v1/health
+```
+
+Example success response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "UP",
+    "service": "starter-api",
+    "checkedAt": "2026-05-07T03:00:00Z"
+  },
+  "message": "OK",
+  "timestamp": "2026-05-07T03:00:00Z"
+}
 ```
 
 ## Getting Started
@@ -40,7 +103,7 @@ src/main/java/com/starter/api/
 
 Copy `application-local.properties.example` to `application-local.properties` (gitignored) and fill in your connection details.
 
-The example file has ready-to-use templates for Oracle, PostgreSQL, and MySQL — uncomment the one you need.
+The example file has ready-to-use templates for Oracle, PostgreSQL, and MySQL - uncomment the one you need.
 
 ### 2. Run the application
 
@@ -63,7 +126,7 @@ On local profile, Flyway runs migrations from `src/main/resources/db/migration` 
 ./mvnw test
 ```
 
-Tests use an H2 in-memory database — no external database needed.
+Tests use an H2 in-memory database - no external database needed.
 
 ### 4. Open Swagger UI
 
