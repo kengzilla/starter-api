@@ -74,6 +74,11 @@ src/main/java/com/starter/api/
         └── infra/                   Auth infrastructure adapters (skeleton)
 ```
 
+## Correlation and logging (brief)
+
+- **Inbound HTTP:** [`CorrelationIdFilter`](src/main/java/com/starter/api/app/logging/CorrelationIdFilter.java) accepts **`X-Request-Id`** / **`X-Correlation-Id`**, stores **`requestId`** in MDC, and returns the id on the response. Structured JSON logs include `requestId`, `traceId`, and `spanId` when tracing is active (see [`docs/LOGGING_USE_CASES.md`](docs/LOGGING_USE_CASES.md)).
+- **Outbound HTTP:** [`RestClientRequestIdPropagationConfig`](src/main/java/com/starter/api/app/config/RestClientRequestIdPropagationConfig.java) registers a **`RestClientCustomizer`** so `RestClient` instances built from the auto-configured `RestClient.Builder` forward **`X-Request-Id`** from the current MDC to downstream services.
+
 ## Health Endpoint
 
 The starter provides a lightweight liveness endpoint:

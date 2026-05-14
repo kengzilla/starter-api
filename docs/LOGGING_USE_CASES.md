@@ -9,6 +9,8 @@
 - [`HttpRequestLogFilter`](../src/main/java/com/starter/api/app/logging/HttpRequestLogFilter.java)
 - [`GlobalExceptionHandler`](../src/main/java/com/starter/api/app/exception/GlobalExceptionHandler.java)
 - [`logback-spring.xml`](../src/main/resources/logback-spring.xml)
+- [`RestClientRequestIdPropagationConfig`](../src/main/java/com/starter/api/app/config/RestClientRequestIdPropagationConfig.java) — ส่งต่อ `X-Request-Id` บน `RestClient` outbound
+- starter-app: [`request-id.interceptor.ts`](../../starter-app/src/app/core/interceptors/request-id.interceptor.ts) — แนบ `X-Request-Id` จาก browser
 
 ---
 
@@ -55,6 +57,15 @@ X-Request-Id: ticket-2026-0514-001
 
 ---
 
+## 2.1) starter-app → API และ API → service ถัดไป (`X-Request-Id`)
+
+- **starter-app (Angular):** [`request-id.interceptor.ts`](../../starter-app/src/app/core/interceptors/request-id.interceptor.ts) แนบ header **`X-Request-Id`** ใหม่ ( **`crypto.randomUUID()`** ต่อ HTTP request) เมื่อ URL ตรงกับ **`environment.requestIdUrlPrefixes`** (ค่าเริ่มต้น `['/api']` สำหรับ dev proxy) หรือขึ้นต้นด้วย **`environment.apiUrl`** ที่ไม่ว่าง — ปรับเพิ่ม prefix อื่น (เช่น `/graphql`, origin ของ API จริง) ได้ใน `environment.ts` / `environment.prod.ts`
+- **starter-api (outbound):** [`RestClientRequestIdPropagationConfig`](../src/main/java/com/starter/api/app/config/RestClientRequestIdPropagationConfig.java) ลงทะเบียน **`RestClientCustomizer`** เพื่ออ่าน `MDC` **`requestId`** แล้วตั้ง **`X-Request-Id`** บนทุกคำขอที่ออกผ่าน **`RestClient`** ที่ build จาก `RestClient.Builder` ของ Spring (ทดสอบใน [`RestClientRequestIdPropagationTest`](../src/test/java/com/starter/api/app/config/RestClientRequestIdPropagationTest.java))
+
+**หมายเหตุ:** distributed **`traceId`** ยังเริ่มที่ API (Brave) ตาม inbound; ไม่ต้องส่ง trace จาก browser ถ้าใช้แนวง่าย — ใช้ **`X-Request-Id`** เป็นสะพานหลักระหว่าง browser, API และ service ถัดไป
+
+---
+
 ## 3) Distributed trace (ข้าม service / Datadog / APM)
 
 **สถานการณ์:** มีหลาย service ต้องการ trace เดียวกัน
@@ -70,7 +81,7 @@ X-Request-Id: ticket-2026-0514-001
 2. Log ของ starter-api ใช้ `traceId` เดียวกับ A (ค้นใน Datadog/Tempo/Jaeger ได้)
 3. **`requestId`** ยังใช้แยก “เลข ticket ฝั่งธุรกิจ” ได้คู่กับ trace ทางเทคนิค
 
-เมื่อมี **`RestClient` / `RestClient.Builder`** จาก Spring context การส่งต่อ observation/tracing ไปยัง downstream ทำได้ผ่าน auto-configuration ของ Spring Boot (ไม่ต้องฝัง vendor SDK สำหรับ log)
+เมื่อมี **`RestClient` / `RestClient.Builder`** จาก Spring context การส่งต่อ observation/tracing ไปยัง downstream ทำได้ผ่าน auto-configuration ของ Spring Boot (ไม่ต้องฝัง vendor SDK สำหรับ log) และ **`X-Request-Id`** จาก MDC จะถูกส่งต่อเมื่อใช้ `RestClient` ที่ผ่าน `RestClientCustomizer` ตามหมวด 2.1
 
 ---
 

@@ -1,5 +1,7 @@
 # Architecture Guideline
 
+> Thai version: [ARCHITECTURE_GUIDELINE_TH.md](./ARCHITECTURE_GUIDELINE_TH.md)
+
 Rules every developer follows. When in doubt, check here first.
 
 This document matches the **current** `starter-api` codebase and its modular-monolith **Phase 1** baseline.
@@ -11,7 +13,7 @@ This document matches the **current** `starter-api` codebase and its modular-mon
 | Area | Location / notes |
 | --- | --- |
 | Entry point | `com.starter.api.StarterApplication` |
-| App composition | `app/` (`config`, `exception`, `security`) |
+| App composition | `app/` (`config`, `exception`, `security`, `logging` — filters, logging properties) |
 | Shared kernel | `shared/api/ApiResponse.java`, `shared/error/ErrorCodes.java`, `shared/exception/ApiBusinessException.java` |
 | Health endpoint | `modules/health/api/HealthController.java` exposes `GET /api/v1/health` |
 | Auth module | `modules/auth/api`, `modules/auth/domain`, `modules/auth/infra` (skeleton only) |
@@ -92,6 +94,22 @@ FAILED
 ```
 
 Adding new codes: append to `ErrorCodes.java` with the feature prefix. **Never remove or rename** codes that clients or logs already rely on.
+
+---
+
+## Logging, tracing, and correlation
+
+The API logs **structured JSON to stdout** (suitable for containers; platform agents forward to Elasticsearch, Datadog, etc.). Do not rely on local `.log` files in production and do not embed vendor log-shipping SDKs in the application.
+
+| Concern | Location / notes | How to trace or correlate |
+| --- | --- | --- |
+| Support / ticket id | `app/logging/CorrelationIdFilter` — reads inbound `X-Request-Id` / `X-Correlation-Id`, stores **`requestId`** in MDC, echoes id on response | Filter log lines by **`requestId`** (or the header value returned to the client) |
+| Distributed trace (APM) | Micrometer / Brave — inbound W3C **`traceparent`**, MDC **`traceId`** / **`spanId`** on each request | Filter by **`traceId`** across services when callers propagate tracing headers |
+| Access line + optional bodies | `app/logging/HttpRequestLogFilter`, `LoggingProperties` (`app.logging.*`) | `http_request` INFO line; JSON bodies on **5xx** or when **debug** flags are on (with redaction) |
+| Central errors + log levels | `app/exception/GlobalExceptionHandler` | Log keys such as `business_error`, `validation_error`, `unhandled_exception` |
+| Outbound HTTP | `app/config/RestClientRequestIdPropagationConfig` — **`RestClientCustomizer`** copies MDC **`requestId`** to outbound **`X-Request-Id`** for `RestClient` built from the auto-configured `RestClient.Builder` | Downstream services that use the same pattern show the **same** support id |
+
+Configuration reference and end-to-end examples (including **starter-app** `X-Request-Id` interceptor): **`docs/LOGGING_USE_CASES.md`**. New cross-cutting web filters or HTTP client wiring should stay in **`app/`** (not in `modules/*`) unless the team explicitly promotes a shared library.
 
 ---
 
@@ -190,3 +208,4 @@ For each new REST feature, confirm:
 - [ ] Endpoints documented with `@Operation` and `@ApiResponses`.
 - [ ] Tests cover success and each meaningful error path.
 - [ ] Schema changes ship as new Flyway migrations.
+- [ ] Logging/correlation baseline respected (no secrets in logs; see `docs/LOGGING_USE_CASES.md` and **Logging, tracing, and correlation** above).
